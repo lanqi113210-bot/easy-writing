@@ -1,26 +1,65 @@
+name: 打包APK - Easy-Writing
+run-name: 正在编译易写安卓包
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: 拉取源码
+        uses: actions/checkout@v4
+
+      - name: 安装JDK17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
       - name: 安装 Android SDK
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip
-          # 使用国内镜像下载命令行工具
           wget https://mirrors.aliyun.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip commandlinetools-linux-11076708_latest.zip -d $HOME/android
           echo "ANDROID_HOME=$HOME/android" >> $GITHUB_ENV
           echo "PATH=$HOME/android/cmdline-tools/bin:$PATH" >> $GITHUB_ENV
-          # 阿里云sdk镜像
           yes | sdkmanager --sdk_root=$HOME/android --no_https "platforms;android-34" "build-tools;34.0.0" "ndk;26.2.11394342"
         env:
           REPO_OS_OVERRIDE: "linux"
-      - name: 安装 Android SDK
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          # 使用国内镜像下载命令行工具
-          wget https://mirrors.aliyun.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip -d $HOME/android
-          echo "ANDROID_HOME=$HOME/android" >> $GITHUB_ENV
-          echo "PATH=$HOME/android/cmdline-tools/bin:$PATH" >> $GITHUB_ENV
-          # 阿里云sdk镜像
-          yes | sdkmanager --sdk_root=$HOME/android --no_https "platforms;android-34" "build-tools;34.0.0" "ndk;26.2.11394342"
-        env:
-          REPO_OS_OVERRIDE: "linux"
+
+      - name: 安装Rust环境
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Rust编译缓存
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: 安装Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 安装前端依赖（pnpm）
+        run: pnpm install
+
+      - name: 初始化Tauri安卓工程
+        run: npx tauri android init
+
+      - name: 编译安卓Debug APK
+        run: npx tauri android build --apk --debug
+
+      - name: 上传APK产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: easy-writing-android-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
