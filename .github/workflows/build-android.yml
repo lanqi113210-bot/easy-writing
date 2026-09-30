@@ -20,8 +20,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 配置Android SDK
-        uses: android-actions/setup-android@v3
+      # 手动安装Android SDK，替换原来容易崩的setup-android
+      - name: 安装 Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip commandlinetools-linux-11076708_latest.zip -d $HOME/android
+          echo "ANDROID_HOME=$HOME/android" >> $GITHUB_ENV
+          echo "PATH=$HOME/android/cmdline-tools/bin:$PATH" >> $GITHUB_ENV
+          yes | sdkmanager --sdk_root=$HOME/android "platforms;android-34" "build-tools;34.0.0" "ndk;26.2.11394342"
 
       - name: 安装Rust环境
         uses: dtolnay/rust-toolchain@stable
