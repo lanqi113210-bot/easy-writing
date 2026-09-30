@@ -1,5 +1,5 @@
 name: 打包APK - Easy-Writing
-run-name: ${{ shturl.cc/Up }} 正在编译易写安卓包
+run-name: 正在编译易写安卓包
 
 on:
   workflow_dispatch:
