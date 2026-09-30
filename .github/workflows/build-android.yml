@@ -9,7 +9,7 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - name: 拉取源码
         uses: actions/checkout@v4
@@ -20,17 +20,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 安装 Android SDK
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://mirrors.aliyun.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip -d $HOME/android
-          echo "ANDROID_HOME=$HOME/android" >> $GITHUB_ENV
-          echo "PATH=$HOME/android/cmdline-tools/bin:$PATH" >> $GITHUB_ENV
-          yes | sdkmanager --sdk_root=$HOME/android --no_https "platforms;android-34" "build-tools;34.0.0" "ndk;26.2.11394342"
-        env:
-          REPO_OS_OVERRIDE: "linux"
+      # 改用别人预构建好Android SDK的Action，避开手动下载超时
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
+          ndk-version: 26.2.11394342
 
       - name: 安装Rust环境
         uses: dtolnay/rust-toolchain@stable
