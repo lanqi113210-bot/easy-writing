@@ -20,13 +20,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 改用别人预构建好Android SDK的Action，避开手动下载超时
+      # v3版本不需要传api-level等参数，action自动配置SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools: 34.0.0
-          ndk-version: 26.2.11394342
 
       - name: 安装Rust环境
         uses: dtolnay/rust-toolchain@stable
